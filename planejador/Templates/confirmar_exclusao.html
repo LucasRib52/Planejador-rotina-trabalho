@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Confirmar Exclusão</h2>
+
+<p>Tem certeza que deseja excluir a tarefa:</p>
+<p><strong>{{ object.titulo }}</strong> em <strong>{{ object.data }}</strong> às <strong>{{ object.hora }}</strong>?</p>
+
+<form method="post">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-danger">Sim, excluir</button>
+  <a href="{% url 'planejador:lista' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

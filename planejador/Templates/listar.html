@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+
+{% block extrahead %}
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+
+    #calendar {
+      max-width: 100%;
+      height: 650px;
+      font-size: 0.95rem;
+      background-color: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+      padding: 25px;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .fc-toolbar-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #343a40;
+    }
+
+    .fc-button {
+      padding: 0.45rem 1rem;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .fc-button:hover {
+      opacity: 0.85;
+    }
+
+    .modal-content {
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+
+    .modal-header {
+      background: linear-gradient(90deg, #007bff, #6f42c1);
+      color: #fff;
+      border-top-left-radius: 14px;
+      border-top-right-radius: 14px;
+    }
+
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+    .btn {
+      border-radius: 8px;
+      font-weight: 500;
+    }
+
+    .form-control {
+      border-radius: 6px;
+    }
+
+    .alert {
+      border-radius: 6px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-lg {
+      font-size: 1.1rem;
+      padding: 0.65rem 1.5rem;
+    }
+
+    .close {
+      font-size: 1.4rem;
+      opacity: 0.9;
+    }
+
+    .close:hover {
+      opacity: 1;
+    }
+
+    .icon {
+      margin-right: 6px;
+    }
+
+    @media (max-width: 576px) {
+      #calendar {
+        padding: 15px;
+      }
+
+      .fc-toolbar-title {
+        font-size: 1.3rem;
+      }
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+  <h2 class="font-weight-bold text-dark">
+    <i class="fas fa-calendar-alt text-primary me-2"></i> Planejador Semanal
+  </h2>
+</div>
+
+<div class="text-center mb-4">
+  <a href="{% url 'planejador:nova' %}" class="btn btn-success btn-lg shadow-sm">
+    <i class="fas fa-plus-circle icon"></i> Nova Tarefa
+  </a>
+</div>
+
+<div class="container-fluid px-3">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-11">
+      <div id="calendar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="modalTarefa" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <form id="formTarefaModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="fas fa-tasks icon"></i> Detalhes da Tarefa
+          </h5>
+          <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="tarefa_id" name="id">
+          <p><strong><i class="fas fa-heading icon"></i>Título:</strong> <span id="modal_titulo"></span></p>
+          <p><strong><i class="fas fa-calendar-day icon"></i>Data:</strong> <span id="modal_data"></span></p>
+          <p><strong><i class="fas fa-clock icon"></i>Hora:</strong> <span id="modal_hora"></span></p>
+          <p><strong><i class="fas fa-align-left icon"></i>Descrição:</strong> <span id="modal_descricao_original"></span></p>
+
+          <div class="alert alert-success" id="infoFinalizado" style="display: none;">
+            <i class="fas fa-check-circle"></i> Esta tarefa foi finalizada.
+          </div>
+
+          <div class="alert alert-warning" id="infoNaoFinalizado" style="display: none;">
+            <i class="fas fa-exclamation-triangle"></i> Esta tarefa não foi finalizada.
+          </div>
+
+          <div class="form-group" id="descricaoFinalizacaoGroup" style="display: none;">
+            <label for="modal_descricao_execucao"><i class="fas fa-check-double icon"></i>Descrição do que foi feito</label>
+            <textarea class="form-control" id="modal_descricao_execucao" name="descricao_execucao" rows="3"></textarea>
+          </div>
+
+          <div class="form-group" id="horaFinalizacaoGroup" style="display: none;">
+            <label for="modal_hora_finalizacao"><i class="fas fa-hourglass-end icon"></i>Horário de Finalização</label>
+            <input type="text" class="form-control" id="modal_hora_finalizacao" name="hora_finalizacao" readonly>
+          </div>
+
+          <div class="form-group" id="motivoNaoFinalizadoGroup" style="display: none;">
+            <label for="modal_motivo"><i class="fas fa-ban icon"></i>Motivo de não finalização</label>
+            <textarea class="form-control" id="modal_motivo" name="motivo_nao_finalizado" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer justify-content-between" id="botoesAcao">
+          <div id="grupoAcao">
+            <button type="button" class="btn btn-success" id="btnFinalizar">
+              <i class="fas fa-check-circle icon"></i>Finalizado
+            </button>
+            <button type="button" class="btn btn-warning" id="btnNaoFinalizado">
+              <i class="fas fa-times-circle icon"></i>Não Finalizado
+            </button>
+          </div>
+          <div>
+            <button type="button" class="btn btn-danger" id="btnExcluir">
+              <i class="fas fa-trash-alt icon"></i>Excluir Tarefa
+            </button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+              <i class="fas fa-times icon"></i>Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script id="tarefasJSON" type="application/json">{{ tarefas_json|safe }}</script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const calendarEl = document.getElementById('calendar');
+    const tarefas = JSON.parse(document.getElementById('tarefasJSON').textContent);
+
+    const eventos = tarefas.map(t => ({
+      id: t.id,
+      title: t.titulo,
+      start: `${t.data}T${t.hora}`,
+      color: t.realizado
+        ? '#28a745'
+        : t.motivo_nao_finalizado && t.motivo_nao_finalizado.length > 0
+          ? '#dc3545'
+          : '#ffc107'
+    }));
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridWeek',
+      locale: 'pt-br',
+      height: 650,
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridWeek,dayGridDay'
+      },
+      events: eventos,
+      eventClick: function (info) {
+        const evento = info.event;
+        const tarefa = tarefas.find(t => t.id == evento.id);
+
+        document.getElementById("tarefa_id").value = tarefa.id;
+        document.getElementById("modal_titulo").textContent = tarefa.titulo;
+        document.getElementById("modal_data").textContent = tarefa.data;
+        document.getElementById("modal_hora").textContent = tarefa.hora;
+        document.getElementById("modal_descricao_original").textContent = tarefa.descricao || "";
+        document.getElementById("modal_descricao_execucao").value = tarefa.descricao_execucao || "";
+        document.getElementById("modal_hora_finalizacao").value = tarefa.hora_finalizacao || "";
+        document.getElementById("modal_motivo").value = tarefa.motivo_nao_finalizado || "";
+
+        document.getElementById("infoFinalizado").style.display = "none";
+        document.getElementById("infoNaoFinalizado").style.display = "none";
+        document.getElementById("descricaoFinalizacaoGroup").style.display = "none";
+        document.getElementById("horaFinalizacaoGroup").style.display = "none";
+        document.getElementById("motivoNaoFinalizadoGroup").style.display = "none";
+
+        document.getElementById("modal_descricao_execucao").readOnly = false;
+        document.getElementById("modal_motivo").readOnly = false;
+        document.getElementById("grupoAcao").style.display = "flex";
+
+        if (tarefa.realizado) {
+          document.getElementById("infoFinalizado").style.display = "block";
+          document.getElementById("descricaoFinalizacaoGroup").style.display = "block";
+          document.getElementById("horaFinalizacaoGroup").style.display = "block";
+          document.getElementById("modal_descricao_execucao").readOnly = true;
+          document.getElementById("grupoAcao").style.display = "none";
+        } else if (tarefa.motivo_nao_finalizado && tarefa.motivo_nao_finalizado.length > 0) {
+          document.getElementById("infoNaoFinalizado").style.display = "block";
+          document.getElementById("motivoNaoFinalizadoGroup").style.display = "block";
+          document.getElementById("modal_motivo").readOnly = true;
+          document.getElementById("grupoAcao").style.display = "none";
+        }
+
+        $('#modalTarefa').modal('show');
+      }
+    });
+
+    calendar.render();
+
+    document.getElementById("btnFinalizar").addEventListener("click", function () {
+      document.getElementById("descricaoFinalizacaoGroup").style.display = "block";
+      document.getElementById("horaFinalizacaoGroup").style.display = "block";
+      document.getElementById("motivoNaoFinalizadoGroup").style.display = "none";
+
+      const now = new Date();
+      const horaAtual = now.toTimeString().slice(0, 5);
+      document.getElementById("modal_hora_finalizacao").value = horaAtual;
+
+      const descricao = document.getElementById("modal_descricao_execucao").value.trim();
+
+      if (!descricao) {
+        alert("Preencha a descrição do que foi feito.");
+        return;
+      }
+
+      salvarTarefa(true);
+    });
+
+    document.getElementById("btnNaoFinalizado").addEventListener("click", function () {
+      document.getElementById("descricaoFinalizacaoGroup").style.display = "none";
+      document.getElementById("horaFinalizacaoGroup").style.display = "none";
+      document.getElementById("motivoNaoFinalizadoGroup").style.display = "block";
+
+      const motivo = document.getElementById("modal_motivo").value.trim();
+      if (!motivo) {
+        alert("Informe o motivo de não finalização.");
+        return;
+      }
+
+      salvarTarefa(false);
+    });
+
+    document.getElementById("btnExcluir").addEventListener("click", function () {
+      const id = document.getElementById("tarefa_id").value;
+      if (confirm("Tem certeza que deseja excluir essa tarefa?")) {
+        fetch(`/planejador/deletar/${id}/`, {
+          method: "POST",
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+        }).then(() => location.reload());
+      }
+    });
+
+    function salvarTarefa(realizado) {
+      const formData = new FormData(document.getElementById("formTarefaModal"));
+      formData.append("realizado", realizado);
+
+      fetch("{% url 'planejador:atualizar-tarefa' %}", {
+        method: "POST",
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          $('#modalTarefa').modal('hide');
+          location.reload();
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}
