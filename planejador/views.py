@@ -12,7 +12,6 @@ import json
 class TarefaListView(ListView):
     model = Tarefa
     template_name = 'listar.html'
-    context_object_name = 'tarefas'
 
     def get_queryset(self):
         return Tarefa.objects.order_by('data', 'hora')

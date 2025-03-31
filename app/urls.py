@@ -1,7 +1,9 @@
 from django.contrib import admin
 from django.urls import path, include
+from django.shortcuts import redirect  # <- importa o redirect
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('planejador/', include('planejador.urls')),  # Aqui você inclui as rotas do app planejador
+    path('', lambda request: redirect('planejador/', permanent=False)),  # <- redireciona ao acessar /
+    path('planejador/', include('planejador.urls')),
 ]
