@@ -11,7 +11,7 @@ import json
 
 class TarefaListView(ListView):
     model = Tarefa
-    template_name = 'listar.html'
+    template_name = 'planejador/listar.html'  
 
     def get_queryset(self):
         return Tarefa.objects.order_by('data', 'hora')
@@ -37,20 +37,20 @@ class TarefaListView(ListView):
 class TarefaCreateView(CreateView):
     model = Tarefa
     form_class = TarefaForm
-    template_name = 'form.html'
+    template_name = 'planejador/form.html' 
     success_url = reverse_lazy('planejador:lista')
 
 
 class TarefaUpdateView(UpdateView):
     model = Tarefa
     form_class = TarefaForm
-    template_name = 'form.html'
+    template_name = 'planejador/form.html' 
     success_url = reverse_lazy('planejador:lista')
 
 
 class TarefaDeleteView(DeleteView):
     model = Tarefa
-    template_name = 'confirmar_exclusao.html'
+    template_name = 'planejador/confirmar_exclusao.html'
     success_url = reverse_lazy('planejador:lista')
 
 
